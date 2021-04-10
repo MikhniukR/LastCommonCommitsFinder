@@ -18,12 +18,10 @@ import ru.sailor.data.GithubBranch;
 import ru.sailor.data.GithubCommit;
 import ru.sailor.data.GithubRepo;
 import ru.sailor.exceptions.ApiRateLimitException;
-import ru.sailor.exceptions.BranchNotFoundException;
-import ru.sailor.exceptions.CommitNotFoundException;
+import ru.sailor.exceptions.DataNotFoundException;
 import ru.sailor.exceptions.GitCommunicationException;
 import ru.sailor.exceptions.InvalidAuthTokenException;
 import ru.sailor.exceptions.InvalidCommitCountException;
-import ru.sailor.exceptions.RepositoryNotFoundException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -61,8 +59,6 @@ public class GithubClient implements GitClient {
     }
 
     public Collection<GitCommit> getAllCommitHistory(String commitSHA) throws GitCommunicationException {
-        checkGithubConnection();
-
         Integer pageCount = 1;
         var commitHistory = new ArrayList<>(getPreviousCommits(commitSHA, pageCount, MAX_COMMITS_PER_PAGE));
 
@@ -77,8 +73,6 @@ public class GithubClient implements GitClient {
     }
 
     public List<GitCommit> getCommitHistory(String commitSHA, Integer countOfCommits) throws GitCommunicationException {
-        checkGithubConnection();
-
         if (countOfCommits < 0) {
             throw new InvalidCommitCountException("Count of commits should be > 0, " + countOfCommits + " < 0");
         }
@@ -117,13 +111,11 @@ public class GithubClient implements GitClient {
             responseBody = client.execute(request, httpResponse ->
                     IOUtils.toString(httpResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
             branchInfo = mapper.readValue(responseBody, GithubBranch.class);
+
         } catch (IOException e) {
             throw new GitCommunicationException("Unknown error while making request to github");
         }
-
-        if (branchInfo.getErrorMessage() != null) {
-            throw new BranchNotFoundException("Branch not found");
-        }
+        checkGithubErrorMessage(branchInfo.getErrorMessage());
 
         return GithubBranchToGitCommitConverter.toGit(branchInfo);
     }
@@ -134,23 +126,17 @@ public class GithubClient implements GitClient {
         if (hasToken)
             request.addHeader(HttpHeaders.AUTHORIZATION, authToken);
 
-        String responseBody;
-        List<GithubCommit> commits;
+        String responseBody = null;
         try {
             responseBody = client.execute(request, httpResponse ->
                     IOUtils.toString(httpResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
-            //todo delete or change to some logger
-            System.out.println("Call commit history " + commitSHA + " " + pageCount);
-            commits = mapper.readValue(responseBody, new TypeReference<ArrayList<GithubCommit>>() {});
+            return mapper.readValue(responseBody, new TypeReference<ArrayList<GithubCommit>>() {});
         } catch (MismatchedInputException e) {
-            //todo check anonymous request limit
-//            e.printStackTrace();
-            throw new CommitNotFoundException("Unknown error while making request to github");
+            checkGithubErrorMessage(responseBody);
+            throw new GitCommunicationException("Unknown error while making request to github");
         } catch (IOException e) {
             throw new GitCommunicationException("Unknown error while making request to github");
         }
-
-        return commits;
     }
 
     private Boolean hasTheFirstCommit(List<GithubCommit> commits) {
@@ -172,6 +158,7 @@ public class GithubClient implements GitClient {
     }
 
 
+    //actually only for branchInfo in current realization, so to make solution faster use only hear
     private void checkGithubConnection() throws GitCommunicationException {
         var request = new HttpGet(githubUrl);
         if (hasToken)
@@ -187,18 +174,22 @@ public class GithubClient implements GitClient {
             throw new GitCommunicationException("Unknown error while making request to github");
         }
 
-        checkGithubErrorMessage(repoInfo);
+        checkGithubErrorMessage(repoInfo.getErrorMessage());
     }
 
-    private void checkGithubErrorMessage(GithubRepo repoInfo) throws GitCommunicationException {
-        if (repoInfo.getErrorMessage() != null && repoInfo.getErrorMessage().equals("Bad credentials")) {
+    private void checkGithubErrorMessage(String errorMessage) throws GitCommunicationException {
+        if(errorMessage == null) {
+            //all is correct
+            return;
+        }
+        if (errorMessage.contains("Bad credentials")) {
             throw new InvalidAuthTokenException("Bad credentials. Invalid auth token.");
         }
-        if (repoInfo.getErrorMessage() != null && repoInfo.getErrorMessage().contains("API rate limit exceeded")) {
+        if (errorMessage.contains("API rate limit exceeded")) {
             throw new ApiRateLimitException("API rate limit exceeded. Try to use non anonymous calls.");
         }
-        if (repoInfo.getErrorMessage() != null) {
-            throw new RepositoryNotFoundException("Repository not found. Invalid owner or repo name");
+        if (errorMessage.contains("Not Found") || errorMessage.contains("Branch not found")) {
+            throw new DataNotFoundException("Repository not found. Invalid owner or repo name");
         }
     }
 

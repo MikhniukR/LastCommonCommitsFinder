@@ -4,12 +4,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.sailor.data.GitCommit;
 import ru.sailor.exceptions.ApiRateLimitException;
-import ru.sailor.exceptions.BranchNotFoundException;
-import ru.sailor.exceptions.CommitNotFoundException;
 import ru.sailor.exceptions.GitCommunicationException;
 import ru.sailor.exceptions.InvalidAuthTokenException;
 import ru.sailor.exceptions.InvalidCommitCountException;
-import ru.sailor.exceptions.RepositoryNotFoundException;
+import ru.sailor.exceptions.DataNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -19,7 +17,7 @@ public class GithubClientTest {
 
     private final String authToken = "";
 
-    @Test(expected = RepositoryNotFoundException.class)
+    @Test(expected = DataNotFoundException.class)
     public void testInvalidRepoName() throws GitCommunicationException {
         var githubClient = new GithubClient("MikhniukR", "InvalidRepo", authToken);
         githubClient.getBranchInfo("master");
@@ -159,14 +157,14 @@ public class GithubClientTest {
     }
 
 
-    @Test(expected = CommitNotFoundException.class)
+    @Test(expected = DataNotFoundException.class)
     public void testGetAllCommitsInvalidCommitHash() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);
         githubClient.getAllCommitHistory("invalidCommitHash");
 
     }
 
-    @Test(expected = CommitNotFoundException.class)
+    @Test(expected = DataNotFoundException.class)
     public void testGetCommitsInvalidCommitHash() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);
         githubClient.getCommitHistory("invalidCommitHash", 1);
@@ -185,7 +183,7 @@ public class GithubClientTest {
         Assert.assertEquals("099a79ac0581230cec78cdbdff5b581d6ef9105f", githubClient.getBranchInfo("master").getLastCommit().getSha());
     }
 
-    @Test(expected = BranchNotFoundException.class)
+    @Test(expected = DataNotFoundException.class)
     public void testGetBranchInfoInvalidBranch() throws GitCommunicationException {
         var githubClient = new GithubClient("MikhniukR", "Test_db", authToken);
 
