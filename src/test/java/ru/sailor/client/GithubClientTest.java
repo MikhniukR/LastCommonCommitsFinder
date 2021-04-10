@@ -1,7 +1,6 @@
 package ru.sailor.client;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import ru.sailor.data.GitCommit;
 import ru.sailor.exceptions.ApiRateLimitException;
@@ -18,7 +17,6 @@ import java.util.Set;
 
 public class GithubClientTest {
 
-    //todo remove token before publish
     private final String authToken = "";
 
     @Test(expected = RepositoryNotFoundException.class)
@@ -153,7 +151,6 @@ public class GithubClientTest {
     }
 
     //Make 1194 http calls
-//    @Ignore
     @Test
     public void testGetAllBigCommitHistory() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);
@@ -185,7 +182,7 @@ public class GithubClientTest {
     public void testGetBranchInfoSHA() throws GitCommunicationException {
         var githubClient = new GithubClient("MikhniukR", "Test_db", authToken);
 
-        Assert.assertEquals("099a79ac0581230cec78cdbdff5b581d6ef9105f", githubClient.getBranchInfo("master").getCommit().getSha());
+        Assert.assertEquals("099a79ac0581230cec78cdbdff5b581d6ef9105f", githubClient.getBranchInfo("master").getLastCommit().getSha());
     }
 
     @Test(expected = BranchNotFoundException.class)

@@ -7,7 +7,7 @@ public class GithubBranchToGitCommitConverter {
 
     public static GitBranch toGit(GithubBranch githubBranch) {
         return GitBranch.builder()
-                .commit(GithubCommitToGitCommitConverter.toGit(githubBranch.getCommit()))
+                .lastCommit(GithubCommitToGitCommitConverter.toGit(githubBranch.getCommit()))
                 .name(githubBranch.getName())
                 .build();
     }
