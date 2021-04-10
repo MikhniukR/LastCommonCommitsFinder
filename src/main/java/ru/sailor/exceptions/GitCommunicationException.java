@@ -1,6 +1,8 @@
 package ru.sailor.exceptions;
 
-public class GitCommunicationException extends Exception {
+import java.io.IOException;
+
+public class GitCommunicationException extends IOException {
 
     public GitCommunicationException(String message) {
         super(message);

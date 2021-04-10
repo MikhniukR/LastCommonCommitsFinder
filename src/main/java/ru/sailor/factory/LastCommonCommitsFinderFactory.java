@@ -1,4 +1,6 @@
-package ru.sailor;
+package ru.sailor.factory;
+
+import ru.sailor.LastCommonCommitsFinder;
 
 public interface LastCommonCommitsFinderFactory {
 

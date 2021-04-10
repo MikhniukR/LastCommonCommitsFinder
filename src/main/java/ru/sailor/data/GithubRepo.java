@@ -8,7 +8,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubRepo {
     @JsonProperty("message")
-    String message;
+    String errorMessage;
     @JsonProperty("id")
     Long id;
 

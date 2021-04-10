@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import ru.sailor.data.GitCommit;
+import ru.sailor.exceptions.ApiRateLimitException;
 import ru.sailor.exceptions.BranchNotFoundException;
 import ru.sailor.exceptions.CommitNotFoundException;
 import ru.sailor.exceptions.GitCommunicationException;
@@ -18,16 +19,37 @@ import java.util.Set;
 public class GithubClientTest {
 
     //todo remove token before publish
-    private final String authToken = "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";
+    private final String authToken = "";
 
     @Test(expected = RepositoryNotFoundException.class)
     public void testInvalidRepoName() throws GitCommunicationException {
-        var githubClient = new GithubClient("MikhniukR", "InvalidRepo");
+        var githubClient = new GithubClient("MikhniukR", "InvalidRepo", authToken);
+        githubClient.getBranchInfo("master");
     }
 
     @Test(expected = InvalidAuthTokenException.class)
     public void testInvalidAuthToken() throws GitCommunicationException {
         var githubClient = new GithubClient("MikhniukR", "LastCommonCommitsFinder", "invalidAuthToken");
+        githubClient.getBranchInfo("master");
+    }
+
+    @Test
+    public void testsGetOneCommitWithoutToken() throws GitCommunicationException {
+        var githubClient = new GithubClient("MikhniukR", "LastCommonCommitsFinder");
+
+        try {
+            Assert.assertEquals(1, githubClient.getCommitHistory("3f491e8e2ba5f17630e0c1cbef2aed7427c78fbf", 1).size());
+        }
+        catch (ApiRateLimitException ignored) {
+
+        }
+    }
+
+    @Test(expected = ApiRateLimitException.class)
+    public void testsGetAnonymousLimit() throws GitCommunicationException {
+        var githubClient = new GithubClient("Microsoft", "git");
+
+        githubClient.getAllCommitHistory("c087afa24a08843c93e4e92810e521f9a0cd01af");
     }
 
     @Test
@@ -131,7 +153,7 @@ public class GithubClientTest {
     }
 
     //Make 1194 http calls
-    @Ignore
+//    @Ignore
     @Test
     public void testGetAllBigCommitHistory() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);
