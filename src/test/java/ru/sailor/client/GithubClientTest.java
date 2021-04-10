@@ -3,19 +3,22 @@ package ru.sailor.client;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import ru.sailor.data.GitCommit;
 import ru.sailor.exceptions.BranchNotFoundException;
 import ru.sailor.exceptions.CommitNotFoundException;
 import ru.sailor.exceptions.GitCommunicationException;
-import ru.sailor.exceptions.InvalidCommitCountException;
 import ru.sailor.exceptions.InvalidAuthTokenException;
+import ru.sailor.exceptions.InvalidCommitCountException;
 import ru.sailor.exceptions.RepositoryNotFoundException;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Set;
 
 public class GithubClientTest {
 
     //todo remove token before publish
-    private final String authToken = "";
+    private final String authToken = "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";
 
     @Test(expected = RepositoryNotFoundException.class)
     public void testInvalidRepoName() throws GitCommunicationException {
@@ -32,6 +35,18 @@ public class GithubClientTest {
         var githubClient = new GithubClient("MikhniukR", "LastCommonCommitsFinder", authToken);
 
         Assert.assertEquals(1, githubClient.getCommitHistory("3f491e8e2ba5f17630e0c1cbef2aed7427c78fbf", 1).size());
+    }
+
+    @Test
+    public void testsGetOneCommitBody() throws GitCommunicationException {
+        var githubClient = new GithubClient("MikhniukR", "LastCommonCommitsFinder", authToken);
+
+        Assert.assertEquals(GitCommit.builder()
+                        .sha("3f491e8e2ba5f17630e0c1cbef2aed7427c78fbf")
+                        .timestamp(LocalDateTime.of(2021, 4, 9, 17, 45, 39))
+                        .parents(Collections.emptyList())
+                        .build(),
+                githubClient.getCommitHistory("3f491e8e2ba5f17630e0c1cbef2aed7427c78fbf", 1).get(0));
     }
 
     @Test
@@ -116,6 +131,7 @@ public class GithubClientTest {
     }
 
     //Make 1194 http calls
+    @Ignore
     @Test
     public void testGetAllBigCommitHistory() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);

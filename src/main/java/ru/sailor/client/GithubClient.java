@@ -20,8 +20,8 @@ import ru.sailor.data.GithubRepo;
 import ru.sailor.exceptions.BranchNotFoundException;
 import ru.sailor.exceptions.CommitNotFoundException;
 import ru.sailor.exceptions.GitCommunicationException;
-import ru.sailor.exceptions.InvalidCommitCountException;
 import ru.sailor.exceptions.InvalidAuthTokenException;
+import ru.sailor.exceptions.InvalidCommitCountException;
 import ru.sailor.exceptions.RepositoryNotFoundException;
 
 import java.io.IOException;
@@ -85,7 +85,7 @@ public class GithubClient implements GitClient {
 
         while (countOfCommits > 0) {
             var previousCommits = getPreviousCommits(commitSHA, pageCount, Math.min(countOfCommits, MAX_COMMITS_PER_PAGE));
-            if(previousCommits.isEmpty())
+            if (previousCommits.isEmpty())
                 break;
 
             commitHistory.addAll(previousCommits);
@@ -107,11 +107,11 @@ public class GithubClient implements GitClient {
         if (hasToken)
             request.addHeader(HttpHeaders.AUTHORIZATION, authToken);
 
-        try{
+        try {
             var responseBody = client.execute(request, httpResponse ->
                     IOUtils.toString(httpResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
             var branchInfo = mapper.readValue(responseBody, GithubBranch.class);
-            if(branchInfo.getErrorMessage() != null) {
+            if (branchInfo.getErrorMessage() != null) {
                 throw new BranchNotFoundException("Branch not found");
             }
 
@@ -148,15 +148,16 @@ public class GithubClient implements GitClient {
         if (hasToken)
             request.addHeader(HttpHeaders.AUTHORIZATION, authToken);
 
-        try{
+        try {
             var responseBody = client.execute(request, httpResponse ->
                     IOUtils.toString(httpResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
+            //todo delete or change to some logger
             System.out.println("Call branch history " + commitSHA + " " + pageCount);
-            return mapper.readValue(responseBody, new TypeReference<ArrayList<GithubCommit>>(){});
+            return mapper.readValue(responseBody, new TypeReference<ArrayList<GithubCommit>>() {
+            });
         } catch (MismatchedInputException e) {
             throw new CommitNotFoundException("Commit not found");
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new GitCommunicationException(e.getMessage());
         }
     }

@@ -7,13 +7,11 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubBranch {
-    @JsonProperty("name")
+
     String name;
-    @JsonProperty("commit")
     GithubCommit commit;
 
     @JsonProperty("message")
     String errorMessage;
-
 
 }

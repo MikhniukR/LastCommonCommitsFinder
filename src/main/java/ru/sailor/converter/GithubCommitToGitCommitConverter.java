@@ -10,6 +10,7 @@ public class GithubCommitToGitCommitConverter {
     public static GitCommit toGit(GithubCommit githubCommit) {
         return GitCommit.builder()
                 .sha(githubCommit.getSha())
+                .timestamp(githubCommit.getTimestamp())
                 .parents(githubCommit.getParents().stream()
                         .map(GithubCommitToGitCommitConverter::toGit)
                         .collect(Collectors.toList())
