@@ -118,7 +118,7 @@ public class GithubClient implements GitClient {
                     IOUtils.toString(httpResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
             branchInfo = mapper.readValue(responseBody, GithubBranch.class);
         } catch (IOException e) {
-            throw new GitCommunicationException(e.getMessage());
+            throw new GitCommunicationException("Unknown error while making request to github");
         }
 
         if (branchInfo.getErrorMessage() != null) {
@@ -128,25 +128,29 @@ public class GithubClient implements GitClient {
         return GithubBranchToGitCommitConverter.toGit(branchInfo);
     }
 
-    private Collection<GithubCommit> getPreviousCommits(String commitSHA, Integer pageCount, Integer countOfCommits) throws GitCommunicationException {
+    private List<GithubCommit> getPreviousCommits(String commitSHA, Integer pageCount, Integer countOfCommits) throws GitCommunicationException {
         var request = new HttpGet(commitHistoryUri(commitSHA, pageCount, Math.min(countOfCommits, MAX_COMMITS_PER_PAGE)));
 
         if (hasToken)
             request.addHeader(HttpHeaders.AUTHORIZATION, authToken);
 
+        String responseBody;
+        List<GithubCommit> commits;
         try {
-            var responseBody = client.execute(request, httpResponse ->
+            responseBody = client.execute(request, httpResponse ->
                     IOUtils.toString(httpResponse.getEntity().getContent(), StandardCharsets.UTF_8.name()));
             //todo delete or change to some logger
-            System.out.println("Call branch history " + commitSHA + " " + pageCount);
-            return mapper.readValue(responseBody, new TypeReference<ArrayList<GithubCommit>>() {
-            });
+            System.out.println("Call commit history " + commitSHA + " " + pageCount);
+            commits = mapper.readValue(responseBody, new TypeReference<ArrayList<GithubCommit>>() {});
         } catch (MismatchedInputException e) {
             //todo check anonymous request limit
-            throw new CommitNotFoundException("Commit not found");
+//            e.printStackTrace();
+            throw new CommitNotFoundException("Unknown error while making request to github");
         } catch (IOException e) {
-            throw new GitCommunicationException(e.getMessage());
+            throw new GitCommunicationException("Unknown error while making request to github");
         }
+
+        return commits;
     }
 
     private Boolean hasTheFirstCommit(List<GithubCommit> commits) {
@@ -196,7 +200,6 @@ public class GithubClient implements GitClient {
         if (repoInfo.getErrorMessage() != null) {
             throw new RepositoryNotFoundException("Repository not found. Invalid owner or repo name");
         }
-
     }
 
 }
