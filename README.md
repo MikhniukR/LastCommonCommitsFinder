@@ -1,5 +1,25 @@
 # LastCommonCommitsFinder
 
+## How to 
+### Clone
+```
+git clone https://github.com/MikhniukR/LastCommonCommitsFinder.git
+```
+### Make .jar
+```
+cd LastCommonCommitsFinder/
+mvn package -DskipTests
+or
+mvn clean install -DskipTests 
+```
+### Run tests
+```
+cd LastCommonCommitsFinder/
+mvn test
+```
+[Go to test description](#tests)
+
+## Description
 Задание для отбора на летнюю стажировку в JetBrains.
 
 
@@ -53,7 +73,7 @@ public interface LastCommonCommitsFinderFactory {
 От претендентов ожидается production level код, с тестами и адекватной обработкой ошибок. Результаты принимаются в виде
 ссылок на репозитории на том или ином VCS hosting сервисе.
 
-##Реализация
+## Solution
 
 
 Для работы с гитхабом используется *REST API*, переход на *GraphQL API* в теории должен заметно ускорить работу 
@@ -76,7 +96,10 @@ public interface LastCommonCommitsFinderFactory {
 попасть в одну вершину несколькими путями, то из каждой из достижимых вершин нужно продолжить поиск, но с меткой о том 
 что все достижимые из неё вершины достижимы, что бы не добавить в результат "лишние" вершины.
 
-##Тесты
+## Tests
 В большинстве тестов понадобится токен для github API, поскольку лимит анонимных запросов довольно мал. Сейчас он захардкожен.
 Возможно большая часть тестов не будет проходить из-за ограничения на запрос так же и для не анонимных запросов, для 
-исправления стоит обновить токен. Новый токен можно получить на данной [странице](https://github.com/settings/tokens).
+исправления стоит обновить токен. 
+
+Новый токен можно получить на данной [странице](https://github.com/settings/tokens). 
+Заменить в тестах GithubLastCommonCommitsFinderTest и GithubClientTest.
