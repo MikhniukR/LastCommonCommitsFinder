@@ -10,7 +10,7 @@ import java.util.List;
 
 public class GithubLastCommonCommitsFinderTest {
 
-    private final String authToken = "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";
+    private final String authToken = "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";
 
     @Test(expected = DataNotFoundException.class)
     public void testInvalidRepoName() throws IOException {

@@ -38,7 +38,6 @@ public class GithubClient implements GitClient {
     private static final String GITHUB_API_URL = "https://api.github.com/repos";
     public static final Integer MAX_COMMITS_PER_PAGE = 100;
     private final CloseableHttpClient client = HttpClients.createDefault();
-    private Boolean githubConnectionCheck;
 
     private final String githubUrl;
     private final Boolean hasToken;
@@ -48,30 +47,15 @@ public class GithubClient implements GitClient {
         githubUrl = GITHUB_API_URL + "/" + owner + "/" + repo;
         authToken = "";
         hasToken = false;
-        githubConnectionCheck = false;
     }
 
     public GithubClient(String owner, String repo, String authToken) {
         githubUrl = GITHUB_API_URL + "/" + owner + "/" + repo;
         this.authToken = "Bearer " + authToken;
         hasToken = true;
-        githubConnectionCheck = false;
     }
 
-    public Collection<GitCommit> getAllCommitHistory(String commitSHA) throws GitCommunicationException {
-        Integer pageCount = 1;
-        var commitHistory = new ArrayList<>(getPreviousCommits(commitSHA, pageCount, MAX_COMMITS_PER_PAGE));
-
-        while (!hasTheFirstCommit(commitHistory)) {
-            pageCount++;
-            commitHistory.addAll(getPreviousCommits(commitSHA, pageCount, MAX_COMMITS_PER_PAGE));
-        }
-
-        return commitHistory.stream()
-                .map(GithubCommitToGitCommitConverter::toGit)
-                .collect(Collectors.toList());
-    }
-
+    @Override
     public List<GitCommit> getCommitHistory(String commitSHA, Integer countOfCommits) throws GitCommunicationException {
         if (countOfCommits < 0) {
             throw new InvalidCommitCountException("Count of commits should be > 0, " + countOfCommits + " < 0");
@@ -100,6 +84,7 @@ public class GithubClient implements GitClient {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public GitBranch getBranchInfo(String branchName) throws GitCommunicationException {
         checkGithubConnection();
 

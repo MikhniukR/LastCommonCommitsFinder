@@ -15,7 +15,7 @@ import java.util.Set;
 
 public class GithubClientTest {
 
-    private final String authToken = "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";
+    private final String authToken = "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";
 
     @Test(expected = DataNotFoundException.class)
     public void testInvalidRepoName() throws GitCommunicationException {
@@ -45,7 +45,7 @@ public class GithubClientTest {
     public void testsGetAnonymousLimit() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git");
 
-        githubClient.getAllCommitHistory("c087afa24a08843c93e4e92810e521f9a0cd01af");
+        githubClient.getCommitHistory("c087afa24a08843c93e4e92810e521f9a0cd01af", 120_000);
     }
 
     @Test
@@ -109,20 +109,6 @@ public class GithubClientTest {
     }
 
     @Test
-    public void testGetAllHistoryOneCommit() throws GitCommunicationException {
-        var githubClient = new GithubClient("MikhniukR", "LastCommonCommitsFinder", authToken);
-
-        Assert.assertEquals(1, githubClient.getAllCommitHistory("3f491e8e2ba5f17630e0c1cbef2aed7427c78fbf").size());
-    }
-
-    @Test
-    public void testGetAllTenCommits() throws GitCommunicationException {
-        var githubClient = new GithubClient("MikhniukR", "MikhniukR.github.io", authToken);
-
-        Assert.assertEquals(10, githubClient.getAllCommitHistory("92794c0461f1f89b296851fc907d6d859fc0faba").size());
-    }
-
-    @Test
     public void testGetUniqCommits() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);
         var result = githubClient.getCommitHistory("c807f771947de65dceb22960d1a093d702f42105", GithubClient.MAX_COMMITS_PER_PAGE * 3);
@@ -132,36 +118,10 @@ public class GithubClientTest {
     }
 
     @Test
-    public void testGetAllUniqCommits() throws GitCommunicationException {
-        var githubClient = new GithubClient("Microsoft", "git", authToken);
-        var result = githubClient.getAllCommitHistory("a7336ae514738f159dad314d6674961427f043a6");
-        var uniqResult = Set.copyOf(result);
-
-        Assert.assertEquals(uniqResult.size(), result.size());
-    }
-
-    //It's not so easy to find repo with exactly 1_000 commits in history, so let it's be 1_003
-    @Test
-    public void testGetAllThousandCommits() throws GitCommunicationException {
+    public void testGetThousandCommits() throws GitCommunicationException {
         var githubClient = new GithubClient("Microsoft", "git", authToken);
 
-        Assert.assertEquals(1_003, githubClient.getAllCommitHistory("bbca20accefe8329f976371d0d8c111c965cdf1a").size());
-    }
-
-    //Make 1194 http calls
-    @Test
-    public void testGetAllBigCommitHistory() throws GitCommunicationException {
-        var githubClient = new GithubClient("Microsoft", "git", authToken);
-
-        Assert.assertEquals(119_386, githubClient.getAllCommitHistory("c087afa24a08843c93e4e92810e521f9a0cd01af").size());
-    }
-
-
-    @Test(expected = DataNotFoundException.class)
-    public void testGetAllCommitsInvalidCommitHash() throws GitCommunicationException {
-        var githubClient = new GithubClient("Microsoft", "git", authToken);
-        githubClient.getAllCommitHistory("invalidCommitHash");
-
+        Assert.assertEquals(1_000, githubClient.getCommitHistory("bbca20accefe8329f976371d0d8c111c965cdf1a", 1_000).size());
     }
 
     @Test(expected = DataNotFoundException.class)
