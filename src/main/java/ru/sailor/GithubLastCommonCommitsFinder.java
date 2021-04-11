@@ -19,6 +19,7 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
     private final Integer maxCommitsToFastAsk;
     private final GitClient githubClient;
     private Map<String, GitCommit> knownCommits;
+    private final Integer MAX_PARENTS_COUNT = 2;
 
     public GithubLastCommonCommitsFinder(String owner, String repo, String token) {
         if (token == null) {
@@ -32,6 +33,7 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
 
     @Override
     public Collection<String> findLastCommonCommits(String branchAName, String branchBName) throws IOException {
+        //todo refactor too large function
         var branchA = githubClient.getBranchInfo(branchAName);
         var branchB = githubClient.getBranchInfo(branchBName);
         addLastBranchCommitToKnownCommits(branchA, branchB);
@@ -48,10 +50,14 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
 
         //queue to get the newestCommit from not processed
         var commitsQueue = new PriorityQueue<GitCommit>((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
+        var uniqInCommitsQueueSha = new HashSet<String>();
         //queue to get the newestCommit from reachable from A and B commits
         var reachableCommits = new PriorityQueue<GitCommit>((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
+        var uniqInReachableCommitsSha = new HashSet<String>();
         commitsQueue.add(branchA.getLastCommit());
         commitsQueue.add(branchB.getLastCommit());
+        uniqInCommitsQueueSha.add(branchA.getLastCommit().getSha());
+        uniqInCommitsQueueSha.add(branchB.getLastCommit().getSha());
 
         var commonCommitsSha = new HashSet<String>();
         while (!commitsQueue.isEmpty()) {
@@ -62,7 +68,7 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
                 continue;
             }
             if (!reachableCommits.isEmpty() && isReachableCommitNewest(commitsQueue, reachableCommits)) {
-                addParentsToQueue(reachableCommits.poll(), reachableCommits);
+                addParentsToQueue(reachableCommits.poll(), reachableCommits, uniqInReachableCommitsSha);
                 continue;
             }
 
@@ -76,7 +82,7 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
                 continue;
             }
 
-            addParentsToQueue(newestCommit, commitsQueue);
+            addParentsToQueue(newestCommit, commitsQueue, uniqInCommitsQueueSha);
             addParentsToPrevious(newestCommit, previousA, previousB);
         }
 
@@ -107,18 +113,13 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
     }
 
     private void addParentsToPrevious(GitCommit newestCommit, HashSet<String> previousA, HashSet<String> previousB) {
-        if (newestCommit.hasFirstParent()) {
-            if (previousA.contains(newestCommit.getSha())) {
-                previousA.add(newestCommit.getFirstParentSha());
-            } else {
-                previousB.add(newestCommit.getFirstParentSha());
-            }
-        }
-        if (newestCommit.hasSecondParent()) {
-            if (previousA.contains(newestCommit.getSha())) {
-                previousA.add(newestCommit.getSecondParentSha());
-            } else {
-                previousB.add(newestCommit.getSecondParentSha());
+        for (int i = 0; i < MAX_PARENTS_COUNT; i++) {
+            if (newestCommit.getParents().size() > i) {
+                if (previousA.contains(newestCommit.getSha())) {
+                    previousA.add(newestCommit.getParents().get(i).getSha());
+                } else {
+                    previousB.add(newestCommit.getParents().get(i).getSha());
+                }
             }
         }
     }
@@ -128,26 +129,22 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
         knownCommits.put(branchB.getLastCommit().getSha(), branchB.getLastCommit());
     }
 
-    private void addParentsToQueue(GitCommit newestCommit, PriorityQueue<GitCommit> commitsQueue) throws GitCommunicationException {
-        if (newestCommit.hasFirstParent()) {
-            if (!knownCommits.containsKey(newestCommit.getFirstParentSha())) {
-                knownCommits.putAll(
-                        githubClient.getCommitHistory(newestCommit.getFirstParentSha(), maxCommitsToFastAsk).stream()
-                                .collect(Collectors.toMap(GitCommit::getSha, commit -> commit))
-                );
-            }
+    private void addParentsToQueue(GitCommit commit, PriorityQueue<GitCommit> commitsQueue,
+                                   HashSet<String> uniqInCommitsQueueSha) throws GitCommunicationException {
+        for (int i = 0; i < MAX_PARENTS_COUNT; i++) {
+            if (commit.getParents().size() > i) {
+                if (!knownCommits.containsKey(commit.getParents().get(i).getSha())) {
+                    knownCommits.putAll(
+                            githubClient.getCommitHistory(commit.getParents().get(i).getSha(), maxCommitsToFastAsk).stream()
+                                    .collect(Collectors.toMap(GitCommit::getSha, c -> c))
+                    );
+                }
 
-            commitsQueue.add(knownCommits.get(newestCommit.getFirstParentSha()));
-        }
-        if (newestCommit.hasSecondParent()) {
-            if (!knownCommits.containsKey(newestCommit.getSecondParentSha())) {
-                knownCommits.putAll(
-                        githubClient.getCommitHistory(newestCommit.getSecondParentSha(), maxCommitsToFastAsk).stream()
-                                .collect(Collectors.toMap(GitCommit::getSha, commit -> commit))
-                );
+                if (!uniqInCommitsQueueSha.contains(commit.getParents().get(i).getSha())) {
+                    uniqInCommitsQueueSha.add(commit.getParents().get(i).getSha());
+                    commitsQueue.add(knownCommits.get(commit.getParents().get(i).getSha()));
+                }
             }
-
-            commitsQueue.add(knownCommits.get(newestCommit.getSecondParentSha()));
         }
     }
 

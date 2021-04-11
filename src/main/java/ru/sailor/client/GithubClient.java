@@ -81,16 +81,18 @@ public class GithubClient implements GitClient {
         Integer pageCount = 1;
         while (countOfCommits > 0) {
             var previousCommits = getPreviousCommits(commitSHA, pageCount, Math.min(countOfCommits, MAX_COMMITS_PER_PAGE));
-            if (previousCommits.isEmpty())
+            if (previousCommits.isEmpty()) {
                 break;
+            }
 
             commitHistory.addAll(previousCommits);
 
             countOfCommits -= Math.min(countOfCommits, MAX_COMMITS_PER_PAGE);
             pageCount++;
 
-            if (hasTheFirstCommit(commitHistory))
+            if (hasTheFirstCommit(commitHistory)) {
                 break;
+            }
         }
 
         return commitHistory.stream()
@@ -178,7 +180,7 @@ public class GithubClient implements GitClient {
     }
 
     private void checkGithubErrorMessage(String errorMessage) throws GitCommunicationException {
-        if(errorMessage == null) {
+        if (errorMessage == null) {
             //all is correct
             return;
         }
