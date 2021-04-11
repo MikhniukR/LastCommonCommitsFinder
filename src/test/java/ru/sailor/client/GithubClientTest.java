@@ -15,7 +15,7 @@ import java.util.Set;
 
 public class GithubClientTest {
 
-    private final String authToken = "";
+    private final String authToken = "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";
 
     @Test(expected = DataNotFoundException.class)
     public void testInvalidRepoName() throws GitCommunicationException {

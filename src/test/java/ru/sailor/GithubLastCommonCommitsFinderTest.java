@@ -10,7 +10,7 @@ import java.util.List;
 
 public class GithubLastCommonCommitsFinderTest {
 
-    private final String authToken = "";
+    private final String authToken = "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";
 
     @Test(expected = DataNotFoundException.class)
     public void testInvalidRepoName() throws IOException {
@@ -202,8 +202,8 @@ public class GithubLastCommonCommitsFinderTest {
         var finder = new GithubLastCommonCommitsFinder("MikhniukR", "DemoRepo", authToken);
         var result = finder.findLastCommonCommits("branchC", "branchD");
 
-        Assert.assertTrue(result.containsAll(List.of("47c711847df9c44b9b168fdecf532cf9ec1b5069", "c485a066c9b7e537f9310820add010c447ca4106")));
         Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.containsAll(List.of("47c711847df9c44b9b168fdecf532cf9ec1b5069", "c485a066c9b7e537f9310820add010c447ca4106")));
     }
 
     @Test

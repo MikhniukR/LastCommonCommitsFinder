@@ -33,13 +33,12 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
 
     @Override
     public Collection<String> findLastCommonCommits(String branchAName, String branchBName) throws IOException {
-        //todo refactor too large function
         var branchA = githubClient.getBranchInfo(branchAName);
         var branchB = githubClient.getBranchInfo(branchBName);
         addLastBranchCommitToKnownCommits(branchA, branchB);
         //make extra request to potentially not doing two requests
-        makeRequestIfMergeCommit(branchA.getLastCommit());
-        makeRequestIfMergeCommit(branchB.getLastCommit());
+        makeRequestToGithubOnMerge(branchA.getLastCommit());
+        makeRequestToGithubOnMerge(branchB.getLastCommit());
 
         var previousA = new HashSet<String>() {{
             add(branchA.getLastCommit().getSha());
@@ -75,10 +74,8 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
             //process new uncommon commit
             var newestCommit = commitsQueue.poll();
             if (previousA.contains(newestCommit.getSha()) && previousB.contains(newestCommit.getSha())) {
-                if (!commonCommitsSha.contains(newestCommit.getSha())) {
-                    commonCommitsSha.add(newestCommit.getSha());
-                    reachableCommits.add(newestCommit);
-                }
+                commonCommitsSha.add(newestCommit.getSha());
+                reachableCommits.add(newestCommit);
                 continue;
             }
 
@@ -89,7 +86,7 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
         return commonCommitsSha;
     }
 
-    private void makeRequestIfMergeCommit(GitCommit commit) throws GitCommunicationException {
+    private void makeRequestToGithubOnMerge(GitCommit commit) throws GitCommunicationException {
         if (commit.hasSecondParent() &&
                 !knownCommits.containsKey(commit.getFirstParentSha()) &&
                 !knownCommits.containsKey(commit.getSecondParentSha())) {
@@ -101,7 +98,7 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
     }
 
     private boolean isSameCommits(PriorityQueue<GitCommit> commitsQueue, PriorityQueue<GitCommit> reachableCommits) {
-        if (reachableCommits.isEmpty()) {
+        if (commitsQueue.isEmpty() || reachableCommits.isEmpty()) {
             return false;
         }
 
@@ -109,6 +106,10 @@ public class GithubLastCommonCommitsFinder implements LastCommonCommitsFinder {
     }
 
     private boolean isReachableCommitNewest(PriorityQueue<GitCommit> commitsQueue, PriorityQueue<GitCommit> reachableCommits) {
+        if (commitsQueue.isEmpty() || reachableCommits.isEmpty()) {
+            return false;
+        }
+
         return commitsQueue.peek().getTimestamp().compareTo(reachableCommits.peek().getTimestamp()) > 0;
     }
 
